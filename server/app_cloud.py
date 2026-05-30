@@ -34,6 +34,21 @@ def create_app():
     def index():
         return send_from_directory(static_dir, "index.html")
 
+    @app.route("/api/debug/mqtt")
+    def debug_mqtt():
+        from mqtt_handler import subscriber_cloud as sub
+        st = "connected" if sub.mqtt_client and sub.mqtt_client.is_connected() else "disconnected"
+        return {"mqtt_status": st, "client_exists": sub.mqtt_client is not None}
+
+    @app.route("/api/debug/db")
+    def debug_db():
+        from database.db import get_db
+        db = get_db()
+        devices = db.execute("SELECT * FROM devices").fetchall()
+        sensors = db.execute("SELECT * FROM sensor_data ORDER BY timestamp DESC LIMIT 5").fetchall()
+        db.close()
+        return {"devices": [dict(d) for d in devices], "latest_sensors": [dict(s) for s in sensors]}
+
     return app
 
 
