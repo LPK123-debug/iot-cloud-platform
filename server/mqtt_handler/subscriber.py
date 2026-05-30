@@ -72,12 +72,22 @@ def handle_sensor_data(device_id, payload):
     try:
         db = get_db()
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Auto-register device if not exists
+        existing = db.execute("SELECT 1 FROM devices WHERE device_id=?", (device_id,)).fetchone()
+        if not existing:
+            db.execute(
+                "INSERT INTO devices (device_id, name, description, device_type) VALUES (?,?,?,?)",
+                (device_id, f"Device {device_id}", "Auto-registered", "both")
+            )
+            print(f"[DB] Auto-registered device: {device_id}")
+
         db.execute(
             "INSERT INTO sensor_data (device_id, temperature, humidity, light, timestamp) VALUES (?,?,?,?,?)",
             (device_id, payload.get("temperature"), payload.get("humidity"),
              payload.get("light"), payload.get("timestamp", now))
         )
-        db.execute("UPDATE devices SET last_seen=?, updated_at=? WHERE device_id=?", (now, now, device_id))
+        db.execute("UPDATE devices SET status=?, last_seen=?, updated_at=? WHERE device_id=?", ("online", now, now, device_id))
         db.commit()
         db.close()
         print(f"[DB] Stored: {device_id} T={payload.get('temperature')} H={payload.get('humidity')} L={payload.get('light')}")
@@ -89,10 +99,26 @@ def handle_status_data(device_id, payload):
     try:
         db = get_db()
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Check if device exists, auto-register if not
+        existing = db.execute("SELECT 1 FROM devices WHERE device_id=?", (device_id,)).fetchone()
+        if not existing:
+            db.execute(
+                "INSERT INTO devices (device_id, name, description, device_type) VALUES (?,?,?,?)",
+                (device_id, f"Device {device_id}", "Auto-registered", "both")
+            )
+            print(f"[DB] Auto-registered device: {device_id}")
+
+        # Build update with relay states if present
+        relay1 = payload.get("relay1", "")
+        relay2 = payload.get("relay2", "")
+
         db.execute(
-            "UPDATE devices SET status=?, ip_address=?, wifi_rssi=?, last_seen=?, updated_at=? WHERE device_id=?",
+            "UPDATE devices SET status=?, ip_address=?, wifi_rssi=?, last_seen=?, updated_at=?, relay1_state=?, relay2_state=? WHERE device_id=?",
             (payload.get("status", "unknown"), payload.get("ip", ""),
-             payload.get("wifi_rssi", 0), now, now, device_id)
+             payload.get("wifi_rssi", 0), now, now,
+             relay1 if relay1 else "off", relay2 if relay2 else "off",
+             device_id)
         )
         db.commit()
         db.close()
