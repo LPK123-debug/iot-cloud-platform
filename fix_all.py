@@ -1,4 +1,13 @@
-import json
+import os, shutil
+
+base = r"C:\iot-cloud-platform\server"
+
+# Step 1: Copy config_cloud.py to config.py
+shutil.copy(os.path.join(base, "config_cloud.py"), os.path.join(base, "config.py"))
+print("[1] config_cloud.py -> config.py (done)")
+
+# Step 2: Rewrite subscriber_cloud.py with fixed code
+sub_content = '''import json
 import logging
 import ssl
 from datetime import datetime
@@ -113,3 +122,34 @@ def publish_control(device_id, relay_id, action):
     })
     result = mqtt_client.publish(topic, payload, qos=1)
     return result.rc == mqtt.MQTT_ERR_SUCCESS
+'''
+with open(os.path.join(base, "mqtt_handler", "subscriber_cloud.py"), "w", encoding="utf-8") as f:
+    f.write(sub_content)
+print("[2] subscriber_cloud.py rewritten (done)")
+
+# Step 3: Copy to subscriber.py so db.py and control_routes.py get correct imports
+shutil.copy(os.path.join(base, "mqtt_handler", "subscriber_cloud.py"), os.path.join(base, "mqtt_handler", "subscriber.py"))
+print("[3] subscriber_cloud.py -> subscriber.py (done)")
+
+# Step 4: Also copy config_cloud.py to config.py (already done in step 1)
+print("[4] All imports now point to cloud versions")
+
+# Verify
+print("\n--- Verification ---")
+with open(os.path.join(base, "config.py"), "r", encoding="utf-8") as f:
+    c = f.read()
+    print(f"config.py has HiveMQ host: {'8122586c2ede' in c}")
+
+with open(os.path.join(base, "mqtt_handler", "subscriber.py"), "r", encoding="utf-8") as f:
+    c = f.read()
+    print(f"subscriber.py has CONNECTED SUCCESSFULLY: {'CONNECTED SUCCESSFULLY' in c}")
+
+with open(os.path.join(base, "mqtt_handler", "subscriber_cloud.py"), "r", encoding="utf-8") as f:
+    c = f.read()
+    print(f"subscriber_cloud.py has CONNECTED SUCCESSFULLY: {'CONNECTED SUCCESSFULLY' in c}")
+
+with open(os.path.join(base, "database", "db.py"), "r", encoding="utf-8") as f:
+    c = f.read()
+    print(f"db.py imports config: {'from config import' in c}")
+
+print("\nAll fixed!")
