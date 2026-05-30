@@ -10,7 +10,7 @@ class Config:
     DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
     # MQTT 配置 - HiveMQ Cloud
-    MQTT_BROKER_HOST = os.environ.get("MQTT_HOST", "81225862ede44a59b3b71c4455cb5f2.s1.eu.hivemq.cloud")
+    MQTT_BROKER_HOST = os.environ.get("MQTT_HOST", "8122586c2ede44a59b3b71c4455cb5f2.s1.eu.hivemq.cloud")
     MQTT_BROKER_PORT = int(os.environ.get("MQTT_PORT", "8883"))
     MQTT_USERNAME = os.environ.get("MQTT_USER", "iotadmin")
     MQTT_PASSWORD = os.environ.get("MQTT_PASS", "Li2223841219")
