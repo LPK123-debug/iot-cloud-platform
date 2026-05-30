@@ -1,0 +1,13 @@
+venv/
+.pio/
+__pycache__/
+*.pyc
+*.pyo
+*.db
+mosquitto/data/
+mosquitto/logs/
+*.zip
+server/static/
+server/data/
+.idea/
+.vscode/settings.json
